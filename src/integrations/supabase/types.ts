@@ -376,16 +376,28 @@ export type Database = {
     }
     Functions: {
       check_scan_quota: { Args: { p_user_id: string }; Returns: boolean }
-      complete_scan_job: {
-        Args: {
-          p_duration_ms: number
-          p_findings: Json
-          p_job_id: string
-          p_scan_id: string
-          p_score: number
-        }
-        Returns: undefined
-      }
+      complete_scan_job:
+        | {
+            Args: {
+              p_duration_ms: number
+              p_findings: Json
+              p_job_id: string
+              p_scan_id: string
+              p_score: number
+            }
+            Returns: undefined
+          }
+        | {
+            Args: {
+              p_duration_ms: number
+              p_findings?: Json
+              p_job_id: string
+              p_page_title?: string
+              p_scan_id: string
+              p_score: number
+            }
+            Returns: undefined
+          }
       dequeue_scan_job: {
         Args: never
         Returns: {
@@ -398,6 +410,13 @@ export type Database = {
       fail_scan_job: {
         Args: { p_error: string; p_job_id: string; p_scan_id: string }
         Returns: boolean
+      }
+      get_session_cookies: {
+        Args: { p_session_id: string }
+        Returns: {
+          cookies_encrypted: string
+          url_pattern: string
+        }[]
       }
       reap_stuck_jobs: { Args: never; Returns: number }
       scanner_heartbeat: {
