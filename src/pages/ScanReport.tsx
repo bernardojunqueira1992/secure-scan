@@ -8,6 +8,7 @@ import { SeverityBadge } from "@/components/SeverityBadge";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Clock, Globe, Zap } from "lucide-react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function ScanReport() {
   const { id } = useParams<{ id: string }>();
@@ -29,6 +30,12 @@ export default function ScanReport() {
   });
 
   const severityOrder = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
+  const severityLabels: Record<string, string> = {
+    CRITICAL: "crítico",
+    HIGH: "alto",
+    MEDIUM: "médio",
+    LOW: "baixo",
+  };
   const groupedFindings = severityOrder.reduce((acc, sev) => {
     const items = findings?.filter((f) => f.severity === sev) || [];
     if (items.length) acc[sev] = items;
@@ -50,7 +57,7 @@ export default function ScanReport() {
 
   const exportCSV = () => {
     if (!findings?.length) return;
-    const headers = "Severity,Type,Title,Location,Remediation\n";
+    const headers = "Severidade,Tipo,Título,Localização,Remediação\n";
     const rows = findings.map((f) =>
       `${f.severity},${f.type},"${f.title}","${f.location || ""}","${f.remediation || ""}"`
     ).join("\n");
@@ -77,18 +84,18 @@ export default function ScanReport() {
       <div className="space-y-6">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="sm" asChild>
-            <Link to="/dashboard"><ArrowLeft className="mr-1 h-4 w-4" /> Back</Link>
+            <Link to="/dashboard"><ArrowLeft className="mr-1 h-4 w-4" /> Voltar</Link>
           </Button>
         </div>
 
         {/* Header */}
         <div className="flex flex-col gap-6 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h1 className="font-mono text-xl font-bold">Scan Report</h1>
+            <h1 className="font-mono text-xl font-bold">Relatório de Varredura</h1>
             <p className="mt-1 font-mono text-sm text-muted-foreground">{scan.url}</p>
             <div className="mt-2 flex items-center gap-4 text-xs text-muted-foreground">
               <span className="flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {format(new Date(scan.created_at), "PPp")}
+                <Clock className="h-3 w-3" /> {format(new Date(scan.created_at), "PPp", { locale: ptBR })}
               </span>
               {scan.scan_duration_ms && (
                 <span className="flex items-center gap-1">
@@ -115,9 +122,9 @@ export default function ScanReport() {
           <Card className="border-primary/20 bg-primary/5">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg text-primary">
-                <Zap className="h-5 w-5" /> Quick Wins
+                <Zap className="h-5 w-5" /> Vitórias Rápidas
               </CardTitle>
-              <CardDescription>Easiest issues to fix for maximum impact</CardDescription>
+              <CardDescription>Problemas mais fáceis de corrigir com maior impacto</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3">
               {quickWins.map((f, i) => (
@@ -142,7 +149,7 @@ export default function ScanReport() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <SeverityBadge severity={severity} />
-                <span>{items!.length} {severity.toLowerCase()} issue{items!.length > 1 ? "s" : ""}</span>
+                <span>{items!.length} {items!.length === 1 ? "problema" : "problemas"} {severityLabels[severity] || severity.toLowerCase()}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -172,8 +179,8 @@ export default function ScanReport() {
           <Card className="border-primary/30 bg-primary/5">
             <CardContent className="py-12 text-center">
               <p className="text-2xl">🎉</p>
-              <p className="mt-2 text-lg font-semibold text-primary">No vulnerabilities found!</p>
-              <p className="text-sm text-muted-foreground">Your application passed all security checks.</p>
+              <p className="mt-2 text-lg font-semibold text-primary">Nenhuma vulnerabilidade encontrada!</p>
+              <p className="text-sm text-muted-foreground">Sua aplicação passou em todos os testes de segurança.</p>
             </CardContent>
           </Card>
         )}

@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Cookie, Plus, Trash2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { formatDistanceToNow, isPast } from "date-fns";
+import { ptBR } from "date-fns/locale";
 
 export default function Sessions() {
   const { user } = useAuth();
@@ -32,8 +33,7 @@ export default function Sessions() {
 
   const createSession = useMutation({
     mutationFn: async () => {
-      // Validate JSON
-      try { JSON.parse(cookies); } catch { throw new Error("Invalid JSON. Please paste valid cookie JSON."); }
+      try { JSON.parse(cookies); } catch { throw new Error("JSON inválido. Por favor, cole um JSON de cookies válido."); }
 
       const { error } = await supabase.from("scan_sessions").insert({
         user_id: user!.id,
@@ -45,14 +45,14 @@ export default function Sessions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scan_sessions"] });
-      toast({ title: "Session created", description: `"${name}" is ready to use in scans.` });
+      toast({ title: "Sessão criada", description: `"${name}" está pronta para uso nas varreduras.` });
       setOpen(false);
       setName("");
       setUrlPattern("");
       setCookies("");
     },
     onError: (err: any) => {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     },
   });
 
@@ -63,16 +63,16 @@ export default function Sessions() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scan_sessions"] });
-      toast({ title: "Session deleted" });
+      toast({ title: "Sessão excluída" });
     },
   });
 
   const getStatus = (expiresAt: string | null) => {
-    if (!expiresAt) return { label: "No expiry", color: "text-muted-foreground", dot: "bg-muted-foreground" };
-    if (isPast(new Date(expiresAt))) return { label: "Expired", color: "text-destructive", dot: "bg-destructive" };
+    if (!expiresAt) return { label: "Sem expiração", color: "text-muted-foreground", dot: "bg-muted-foreground" };
+    if (isPast(new Date(expiresAt))) return { label: "Expirado", color: "text-destructive", dot: "bg-destructive" };
     const diff = new Date(expiresAt).getTime() - Date.now();
-    if (diff < 86400000) return { label: "Expiring soon", color: "text-warning", dot: "bg-warning" };
-    return { label: "Active", color: "text-primary", dot: "bg-primary" };
+    if (diff < 86400000) return { label: "Expirando em breve", color: "text-warning", dot: "bg-warning" };
+    return { label: "Ativo", color: "text-primary", dot: "bg-primary" };
   };
 
   return (
@@ -80,31 +80,31 @@ export default function Sessions() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gradient-primary">Login Sessions</h1>
-            <p className="text-sm text-muted-foreground">Manage cookie sessions for authenticated scanning</p>
+            <h1 className="text-2xl font-bold text-gradient-primary">Sessões de Login</h1>
+            <p className="text-sm text-muted-foreground">Gerencie sessões de cookies para varredura autenticada</p>
           </div>
           <Dialog open={open} onOpenChange={setOpen}>
             <DialogTrigger asChild>
-              <Button><Plus className="mr-2 h-4 w-4" /> Add Session</Button>
+              <Button><Plus className="mr-2 h-4 w-4" /> Adicionar Sessão</Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
               <DialogHeader>
-                <DialogTitle>Add Login Session</DialogTitle>
+                <DialogTitle>Adicionar Sessão de Login</DialogTitle>
               </DialogHeader>
               <form onSubmit={(e) => { e.preventDefault(); createSession.mutate(); }} className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Session Name</Label>
-                  <Input placeholder="Production Admin" value={name} onChange={(e) => setName(e.target.value)} required />
+                  <Label>Nome da Sessão</Label>
+                  <Input placeholder="Admin Produção" value={name} onChange={(e) => setName(e.target.value)} required />
                 </div>
                 <div className="space-y-2">
-                  <Label>URL Pattern</Label>
-                  <Input placeholder="https://myapp.com/*" value={urlPattern} onChange={(e) => setUrlPattern(e.target.value)} required />
-                  <p className="text-xs text-muted-foreground">Wildcards supported: *, **</p>
+                  <Label>Padrão de URL</Label>
+                  <Input placeholder="https://meuapp.com/*" value={urlPattern} onChange={(e) => setUrlPattern(e.target.value)} required />
+                  <p className="text-xs text-muted-foreground">Wildcards suportados: *, **</p>
                 </div>
                 <div className="space-y-2">
-                  <Label>Cookies (JSON format)</Label>
+                  <Label>Cookies (formato JSON)</Label>
                   <Textarea
-                    placeholder={'[\n  {\n    "name": "session_token",\n    "value": "abc123...",\n    "domain": ".myapp.com"\n  }\n]'}
+                    placeholder={'[\n  {\n    "name": "session_token",\n    "value": "abc123...",\n    "domain": ".meuapp.com"\n  }\n]'}
                     value={cookies}
                     onChange={(e) => setCookies(e.target.value)}
                     required
@@ -113,19 +113,19 @@ export default function Sessions() {
                   />
                 </div>
                 <div className="rounded-md bg-muted/50 p-3 text-xs text-muted-foreground space-y-1">
-                  <p className="font-semibold">📖 How to export cookies:</p>
-                  <p>1. Install EditThisCookie extension</p>
-                  <p>2. Login to your site</p>
-                  <p>3. Click extension icon → Export → Copy JSON</p>
-                  <p>4. Paste here</p>
+                  <p className="font-semibold">📖 Como exportar cookies:</p>
+                  <p>1. Instale a extensão EditThisCookie</p>
+                  <p>2. Faça login no seu site</p>
+                  <p>3. Clique no ícone da extensão → Exportar → Copiar JSON</p>
+                  <p>4. Cole aqui</p>
                 </div>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                  <Cookie className="h-3 w-3" /> Cookies are stored securely and never shared
+                  <Cookie className="h-3 w-3" /> Cookies são armazenados com segurança e nunca compartilhados
                 </div>
                 <div className="flex justify-end gap-2">
-                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancel</Button>
+                  <Button type="button" variant="outline" onClick={() => setOpen(false)}>Cancelar</Button>
                   <Button type="submit" disabled={createSession.isPending}>
-                    {createSession.isPending ? "Saving..." : "Save Session"}
+                    {createSession.isPending ? "Salvando..." : "Salvar Sessão"}
                   </Button>
                 </div>
               </form>
@@ -141,8 +141,8 @@ export default function Sessions() {
           <Card className="border-border/50">
             <CardContent className="py-12 text-center">
               <Cookie className="mx-auto h-10 w-10 text-muted-foreground" />
-              <p className="mt-4 text-muted-foreground">No login sessions yet</p>
-              <p className="text-sm text-muted-foreground">Add a session to scan authenticated pages</p>
+              <p className="mt-4 text-muted-foreground">Nenhuma sessão de login ainda</p>
+              <p className="text-sm text-muted-foreground">Adicione uma sessão para escanear páginas autenticadas</p>
             </CardContent>
           </Card>
         ) : (
@@ -162,7 +162,7 @@ export default function Sessions() {
                           {session.last_used_at && (
                             <span className="flex items-center gap-1">
                               <Clock className="h-3 w-3" />
-                              Used {formatDistanceToNow(new Date(session.last_used_at), { addSuffix: true })}
+                              Usado {formatDistanceToNow(new Date(session.last_used_at), { addSuffix: true, locale: ptBR })}
                             </span>
                           )}
                         </div>
