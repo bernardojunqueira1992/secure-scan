@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "@/hooks/useAuth";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
@@ -40,8 +40,22 @@ export default function Dashboard() {
         .limit(10);
       return (data || []) as (Tables<"scans"> & { scan_sessions: { name: string } | null })[];
     },
-    refetchInterval: 5000,
   });
+
+  useEffect(() => {
+    const channel = supabase
+      .channel('scans-realtime')
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'scans',
+      }, () => {
+        refetchScans();
+      })
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [refetchScans]);
 
   const handleScan = async (e: React.FormEvent) => {
     e.preventDefault();
