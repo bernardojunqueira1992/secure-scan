@@ -14,13 +14,344 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      findings: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          location: string | null
+          metadata: Json | null
+          remediation: string | null
+          scan_id: string
+          severity: string
+          title: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          remediation?: string | null
+          scan_id: string
+          severity: string
+          title: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          location?: string | null
+          metadata?: Json | null
+          remediation?: string | null
+          scan_id?: string
+          severity?: string
+          title?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "findings_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      plans: {
+        Row: {
+          api_access: boolean
+          created_at: string
+          id: string
+          max_urls: number
+          name: string
+          price_cents: number
+          scans_per_month: number
+        }
+        Insert: {
+          api_access?: boolean
+          created_at?: string
+          id?: string
+          max_urls: number
+          name: string
+          price_cents: number
+          scans_per_month: number
+        }
+        Update: {
+          api_access?: boolean
+          created_at?: string
+          id?: string
+          max_urls?: number
+          name?: string
+          price_cents?: number
+          scans_per_month?: number
+        }
+        Relationships: []
+      }
+      scan_queue: {
+        Row: {
+          attempts: number | null
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          max_attempts: number | null
+          priority: number | null
+          scan_id: string
+          session_id: string | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number | null
+          priority?: number | null
+          scan_id: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number | null
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          max_attempts?: number | null
+          priority?: number | null
+          scan_id?: string
+          session_id?: string | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_queue_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "scans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "scan_queue_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_sessions: {
+        Row: {
+          cookies_encrypted: string
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          updated_at: string
+          url_pattern: string
+          user_id: string
+        }
+        Insert: {
+          cookies_encrypted: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          updated_at?: string
+          url_pattern: string
+          user_id: string
+        }
+        Update: {
+          cookies_encrypted?: string
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          updated_at?: string
+          url_pattern?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      scans: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          error_message: string | null
+          id: string
+          page_title: string | null
+          scan_duration_ms: number | null
+          score: number | null
+          screenshot_url: string | null
+          session_id: string | null
+          status: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          page_title?: string | null
+          scan_duration_ms?: number | null
+          score?: number | null
+          screenshot_url?: string | null
+          session_id?: string | null
+          status?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          error_message?: string | null
+          id?: string
+          page_title?: string | null
+          scan_duration_ms?: number | null
+          score?: number | null
+          screenshot_url?: string | null
+          session_id?: string | null
+          status?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scans_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scheduled_scans: {
+        Row: {
+          alert_threshold: number | null
+          created_at: string
+          cron_schedule: string
+          id: string
+          is_active: boolean | null
+          last_run_at: string | null
+          next_run_at: string | null
+          notification_email: string | null
+          notification_slack_webhook: string | null
+          session_id: string | null
+          updated_at: string
+          url: string
+          user_id: string
+        }
+        Insert: {
+          alert_threshold?: number | null
+          created_at?: string
+          cron_schedule: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          notification_email?: string | null
+          notification_slack_webhook?: string | null
+          session_id?: string | null
+          updated_at?: string
+          url: string
+          user_id: string
+        }
+        Update: {
+          alert_threshold?: number | null
+          created_at?: string
+          cron_schedule?: string
+          id?: string
+          is_active?: boolean | null
+          last_run_at?: string | null
+          next_run_at?: string | null
+          notification_email?: string | null
+          notification_slack_webhook?: string | null
+          session_id?: string | null
+          updated_at?: string
+          url?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scheduled_scans_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      subscriptions: {
+        Row: {
+          created_at: string
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string
+          status: string
+          stripe_subscription_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id: string
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string
+          status?: string
+          stripe_subscription_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      check_scan_quota: { Args: { p_user_id: string }; Returns: boolean }
+      dequeue_scan_job: {
+        Args: never
+        Returns: {
+          job_id: string
+          scan_id: string
+          session_id: string
+          url: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
