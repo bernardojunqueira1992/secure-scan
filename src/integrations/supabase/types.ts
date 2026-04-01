@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       findings: {
         Row: {
+          content_hash: string | null
           created_at: string
           description: string | null
           id: string
@@ -28,6 +29,7 @@ export type Database = {
           type: string
         }
         Insert: {
+          content_hash?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -40,6 +42,7 @@ export type Database = {
           type: string
         }
         Update: {
+          content_hash?: string | null
           created_at?: string
           description?: string | null
           id?: string
@@ -97,9 +100,11 @@ export type Database = {
           completed_at: string | null
           created_at: string
           error_message: string | null
+          heartbeat_at: string | null
           id: string
           max_attempts: number | null
           priority: number | null
+          retry_after: string | null
           scan_id: string
           session_id: string | null
           started_at: string | null
@@ -110,9 +115,11 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
+          heartbeat_at?: string | null
           id?: string
           max_attempts?: number | null
           priority?: number | null
+          retry_after?: string | null
           scan_id: string
           session_id?: string | null
           started_at?: string | null
@@ -123,9 +130,11 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           error_message?: string | null
+          heartbeat_at?: string | null
           id?: string
           max_attempts?: number | null
           priority?: number | null
+          retry_after?: string | null
           scan_id?: string
           session_id?: string | null
           started_at?: string | null
@@ -181,6 +190,30 @@ export type Database = {
           updated_at?: string
           url_pattern?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      scanner_heartbeats: {
+        Row: {
+          active_scans: number | null
+          browser_pool_size: number | null
+          id: string
+          last_seen_at: string | null
+          status: string | null
+        }
+        Insert: {
+          active_scans?: number | null
+          browser_pool_size?: number | null
+          id?: string
+          last_seen_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          active_scans?: number | null
+          browser_pool_size?: number | null
+          id?: string
+          last_seen_at?: string | null
+          status?: string | null
         }
         Relationships: []
       }
@@ -343,6 +376,16 @@ export type Database = {
     }
     Functions: {
       check_scan_quota: { Args: { p_user_id: string }; Returns: boolean }
+      complete_scan_job: {
+        Args: {
+          p_duration_ms: number
+          p_findings: Json
+          p_job_id: string
+          p_scan_id: string
+          p_score: number
+        }
+        Returns: undefined
+      }
       dequeue_scan_job: {
         Args: never
         Returns: {
@@ -351,6 +394,15 @@ export type Database = {
           session_id: string
           url: string
         }[]
+      }
+      fail_scan_job: {
+        Args: { p_error: string; p_job_id: string; p_scan_id: string }
+        Returns: boolean
+      }
+      reap_stuck_jobs: { Args: never; Returns: number }
+      scanner_heartbeat: {
+        Args: { p_active: number; p_pool_size: number; p_scanner_id: string }
+        Returns: undefined
       }
     }
     Enums: {
