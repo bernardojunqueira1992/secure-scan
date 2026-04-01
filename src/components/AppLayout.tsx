@@ -4,9 +4,9 @@ import { Button } from "@/components/ui/button";
 import { Shield, LayoutDashboard, History, Cookie, LogOut } from "lucide-react";
 
 const navItems = [
-  { to: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { to: "/history", label: "History", icon: History },
-  { to: "/sessions", label: "Sessions", icon: Cookie },
+  { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
+  { to: "/history", label: "Histórico", icon: History },
+  { to: "/sessions", label: "Sessões", icon: Cookie },
 ];
 
 export function AppLayout({ children }: { children: React.ReactNode }) {
@@ -15,7 +15,6 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="flex min-h-screen bg-background">
-      {/* Sidebar */}
       <aside className="sticky top-0 flex h-screen w-60 flex-col border-r border-border/50 bg-card/50 p-4">
         <Link to="/" className="mb-8 flex items-center gap-2 px-2">
           <Shield className="h-5 w-5 text-primary" />
@@ -46,11 +45,9 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
           className="justify-start text-muted-foreground"
           onClick={signOut}
         >
-          <LogOut className="mr-2 h-4 w-4" /> Sign Out
+          <LogOut className="mr-2 h-4 w-4" /> Sair
         </Button>
       </aside>
-
-      {/* Main */}
       <main className="flex-1 overflow-auto">
         <div className="container mx-auto p-6 lg:p-8">{children}</div>
       </main>

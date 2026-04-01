@@ -8,8 +8,16 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { format } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import type { Tables } from "@/integrations/supabase/types";
+
+const statusLabels: Record<string, string> = {
+  pending: "pendente",
+  running: "executando",
+  completed: "concluído",
+  failed: "falhou",
+};
 
 export default function ScanHistory() {
   const { data: scans } = useQuery({
@@ -29,7 +37,7 @@ export default function ScanHistory() {
   const chartData = [...completedScans]
     .reverse()
     .map((s) => ({
-      date: format(new Date(s.created_at), "MM/dd"),
+      date: format(new Date(s.created_at), "dd/MM"),
       score: s.score,
       url: s.url,
     }));
@@ -48,15 +56,15 @@ export default function ScanHistory() {
     <AppLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gradient-primary">Scan History</h1>
-          <p className="text-sm text-muted-foreground">Track your security posture over time</p>
+          <h1 className="text-2xl font-bold text-gradient-primary">Histórico de Varreduras</h1>
+          <p className="text-sm text-muted-foreground">Acompanhe sua postura de segurança ao longo do tempo</p>
         </div>
 
         {/* Score Trend Chart */}
         {chartData.length > 1 && (
           <Card className="border-border/50 bg-card/50">
             <CardHeader>
-              <CardTitle className="text-lg">Score Trend</CardTitle>
+              <CardTitle className="text-lg">Tendência de Pontuação</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-64">
@@ -91,21 +99,21 @@ export default function ScanHistory() {
         {/* Scans Table */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
-            <CardTitle className="text-lg">All Scans</CardTitle>
+            <CardTitle className="text-lg">Todas as Varreduras</CardTitle>
           </CardHeader>
           <CardContent>
             {!scans?.length ? (
-              <p className="py-8 text-center text-muted-foreground">No scans yet</p>
+              <p className="py-8 text-center text-muted-foreground">Nenhuma varredura ainda</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>URL</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Trend</TableHead>
-                    <TableHead>Session</TableHead>
+                    <TableHead>Pontuação</TableHead>
+                    <TableHead>Tendência</TableHead>
+                    <TableHead>Sessão</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Data</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -122,11 +130,11 @@ export default function ScanHistory() {
                           {trend === "stable" && <Minus className="h-4 w-4 text-muted-foreground" />}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {scan.scan_sessions?.name || "(public)"}
+                          {scan.scan_sessions?.name || "(público)"}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{scan.status}</TableCell>
+                        <TableCell className="font-mono text-xs">{statusLabels[scan.status] || scan.status}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
-                          {format(new Date(scan.created_at), "PP")}
+                          {format(new Date(scan.created_at), "PP", { locale: ptBR })}
                         </TableCell>
                         <TableCell>
                           {scan.status === "completed" && (

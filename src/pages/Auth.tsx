@@ -28,9 +28,9 @@ export default function Auth() {
       : await signUp(email, password);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Erro", description: error.message, variant: "destructive" });
     } else if (!isLogin) {
-      toast({ title: "Account created", description: "Check your email to confirm your account." });
+      toast({ title: "Conta criada", description: "Verifique seu e-mail para confirmar sua conta." });
     }
 
     setLoading(false);
@@ -44,27 +44,27 @@ export default function Auth() {
             <Shield className="h-6 w-6 text-primary" />
           </div>
           <CardTitle className="text-2xl text-gradient-primary">
-            {isLogin ? "Welcome Back" : "Get Started"}
+            {isLogin ? "Bem-vindo de Volta" : "Comece Agora"}
           </CardTitle>
           <CardDescription>
-            {isLogin ? "Sign in to your SecureScan account" : "Create your free SecureScan account"}
+            {isLogin ? "Entre na sua conta SecureScan" : "Crie sua conta gratuita no SecureScan"}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -85,16 +85,16 @@ export default function Auth() {
               </div>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? "Loading..." : isLogin ? "Sign In" : "Create Account"}
+              {loading ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
             </Button>
           </form>
           <div className="mt-4 text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account?" : "Already have an account?"}{" "}
+            {isLogin ? "Não tem uma conta?" : "Já tem uma conta?"}{" "}
             <button
               onClick={() => setIsLogin(!isLogin)}
               className="text-primary hover:underline"
             >
-              {isLogin ? "Sign up" : "Sign in"}
+              {isLogin ? "Cadastre-se" : "Entrar"}
             </button>
           </div>
         </CardContent>

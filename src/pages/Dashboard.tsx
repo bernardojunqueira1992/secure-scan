@@ -13,7 +13,15 @@ import { Shield, Search, Loader2, ExternalLink } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
+import { ptBR } from "date-fns/locale";
 import type { Tables } from "@/integrations/supabase/types";
+
+const statusLabels: Record<string, string> = {
+  pending: "pendente",
+  running: "executando",
+  completed: "concluído",
+  failed: "falhou",
+};
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -74,11 +82,11 @@ export default function Dashboard() {
 
       await supabase.from("scan_queue").insert(queueData);
 
-      toast({ title: "Scan queued", description: `Scanning ${url}...` });
+      toast({ title: "Varredura enfileirada", description: `Escaneando ${url}...` });
       setUrl("");
       refetchScans();
     } catch (err: any) {
-      toast({ title: "Error", description: err.message, variant: "destructive" });
+      toast({ title: "Erro", description: err.message, variant: "destructive" });
     } finally {
       setScanning(false);
     }
@@ -95,21 +103,21 @@ export default function Dashboard() {
     <AppLayout>
       <div className="space-y-8">
         <div>
-          <h1 className="text-2xl font-bold text-gradient-primary">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">Scan any URL for security vulnerabilities</p>
+          <h1 className="text-2xl font-bold text-gradient-primary">Painel</h1>
+          <p className="text-sm text-muted-foreground">Escaneie qualquer URL em busca de vulnerabilidades de segurança</p>
         </div>
 
         {/* Quick Scan */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Search className="h-5 w-5 text-primary" /> Quick Scan
+              <Search className="h-5 w-5 text-primary" /> Escaneamento Rápido
             </CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleScan} className="flex flex-col gap-4 sm:flex-row">
               <Input
-                placeholder="https://myapp.com/admin"
+                placeholder="https://meuapp.com/admin"
                 value={url}
                 onChange={(e) => setUrl(e.target.value)}
                 type="url"
@@ -118,10 +126,10 @@ export default function Dashboard() {
               />
               <Select value={sessionId} onValueChange={setSessionId}>
                 <SelectTrigger className="w-full sm:w-48">
-                  <SelectValue placeholder="No session" />
+                  <SelectValue placeholder="Sem sessão" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="none">Public (no session)</SelectItem>
+                  <SelectItem value="none">Público (sem sessão)</SelectItem>
                   {sessions?.map((s) => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -129,7 +137,7 @@ export default function Dashboard() {
               </Select>
               <Button type="submit" disabled={scanning} className="min-w-[120px]">
                 {scanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Shield className="mr-2 h-4 w-4" />}
-                Scan Now
+                Escanear
               </Button>
             </form>
           </CardContent>
@@ -138,20 +146,20 @@ export default function Dashboard() {
         {/* Recent Scans */}
         <Card className="border-border/50 bg-card/50">
           <CardHeader>
-            <CardTitle className="text-lg">Recent Scans</CardTitle>
+            <CardTitle className="text-lg">Escaneamentos Recentes</CardTitle>
           </CardHeader>
           <CardContent>
             {!recentScans?.length ? (
-              <p className="py-8 text-center text-muted-foreground">No scans yet. Start your first scan above!</p>
+              <p className="py-8 text-center text-muted-foreground">Nenhum escaneamento ainda. Inicie seu primeiro escaneamento acima!</p>
             ) : (
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>URL</TableHead>
-                    <TableHead>Score</TableHead>
-                    <TableHead>Session</TableHead>
+                    <TableHead>Pontuação</TableHead>
+                    <TableHead>Sessão</TableHead>
                     <TableHead>Status</TableHead>
-                    <TableHead>Date</TableHead>
+                    <TableHead>Data</TableHead>
                     <TableHead></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -161,13 +169,13 @@ export default function Dashboard() {
                       <TableCell className="max-w-[200px] truncate font-mono text-xs">{scan.url}</TableCell>
                       <TableCell><ScoreBadge score={scan.score} size="sm" /></TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {scan.scan_sessions?.name || "(public)"}
+                        {scan.scan_sessions?.name || "(público)"}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {statusIcon(scan.status)} {scan.status}
+                        {statusIcon(scan.status)} {statusLabels[scan.status] || scan.status}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
-                        {formatDistanceToNow(new Date(scan.created_at), { addSuffix: true })}
+                        {formatDistanceToNow(new Date(scan.created_at), { addSuffix: true, locale: ptBR })}
                       </TableCell>
                       <TableCell>
                         {scan.status === "completed" && (

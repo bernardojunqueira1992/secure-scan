@@ -27,12 +27,12 @@ export default function Index() {
           <div className="flex items-center gap-3">
             {user ? (
               <Button asChild>
-                <Link to="/dashboard">Dashboard <ArrowRight className="ml-1 h-4 w-4" /></Link>
+                <Link to="/dashboard">Painel <ArrowRight className="ml-1 h-4 w-4" /></Link>
               </Button>
             ) : (
               <>
-                <Button variant="ghost" asChild><Link to="/auth">Sign In</Link></Button>
-                <Button asChild><Link to="/auth">Get Started Free</Link></Button>
+                <Button variant="ghost" asChild><Link to="/auth">Entrar</Link></Button>
+                <Button asChild><Link to="/auth">Comece Grátis</Link></Button>
               </>
             )}
           </div>
@@ -45,33 +45,33 @@ export default function Index() {
         <div className="container relative mx-auto px-4 py-24 text-center lg:py-32">
           <motion.div {...fadeUp}>
             <Badge variant="outline" className="mb-6 border-primary/30 text-primary">
-              <Zap className="mr-1 h-3 w-3" /> Security scanning in 1 click
+              <Zap className="mr-1 h-3 w-3" /> Varredura de segurança em 1 clique
             </Badge>
           </motion.div>
           <motion.h1 {...fadeUp} transition={{ delay: 0.1 }} className="mx-auto max-w-4xl text-4xl font-bold leading-tight lg:text-6xl">
-            Find vulnerabilities{" "}
-            <span className="text-gradient-primary">before attackers do</span>
+            Encontre vulnerabilidades{" "}
+            <span className="text-gradient-primary">antes dos atacantes</span>
           </motion.h1>
           <motion.p {...fadeUp} transition={{ delay: 0.2 }} className="mx-auto mt-6 max-w-2xl text-lg text-muted-foreground">
-            Automated security scanning for your web apps. Detect exposed API keys, insecure headers, CORS issues, and more — including authenticated pages via cookie injection.
+            Varredura de segurança automatizada para suas aplicações web. Detecte API keys expostas, headers inseguros, problemas de CORS e mais — incluindo páginas autenticadas via injeção de cookies.
           </motion.p>
           <motion.div {...fadeUp} transition={{ delay: 0.3 }} className="mt-8 flex flex-col items-center gap-4 sm:flex-row sm:justify-center">
             <Button size="lg" asChild className="animate-pulse-glow">
-              <Link to="/auth">Start Scanning Free <ArrowRight className="ml-2 h-4 w-4" /></Link>
+              <Link to="/auth">Comece a Escanear Grátis <ArrowRight className="ml-2 h-4 w-4" /></Link>
             </Button>
             <Button size="lg" variant="outline" asChild>
-              <a href="#features">See How It Works</a>
+              <a href="#features">Veja Como Funciona</a>
             </Button>
           </motion.div>
           <motion.div {...fadeUp} transition={{ delay: 0.4 }} className="mx-auto mt-12 max-w-2xl rounded-lg border border-border/50 bg-card/50 p-4 font-mono text-sm text-muted-foreground backdrop-blur-sm">
             <div className="flex items-center gap-2 text-primary">
-              <span className="text-muted-foreground">$</span> securescan --url https://myapp.com --authenticated
+              <span className="text-muted-foreground">$</span> securescan --url https://meuapp.com --authenticated
             </div>
             <div className="mt-2 text-left">
-              <div>✓ Scanning headers... <span className="text-primary">passed</span></div>
-              <div>✗ AWS key found in /static/js/main.js — <span className="text-destructive">CRITICAL</span></div>
-              <div>✗ CORS allows wildcard origin — <span className="text-warning">HIGH</span></div>
-              <div className="mt-1">Score: <span className="text-warning">65/100</span> — 2 critical issues found</div>
+              <div>✓ Verificando headers... <span className="text-primary">aprovado</span></div>
+              <div>✗ Chave AWS encontrada em /static/js/main.js — <span className="text-destructive">CRÍTICO</span></div>
+              <div>✗ CORS permite origem wildcard — <span className="text-warning">ALTO</span></div>
+              <div className="mt-1">Pontuação: <span className="text-warning">65/100</span> — 2 problemas críticos encontrados</div>
             </div>
           </motion.div>
         </div>
@@ -80,17 +80,17 @@ export default function Index() {
       {/* Features */}
       <section id="features" className="container mx-auto px-4 py-20">
         <div className="text-center">
-          <h2 className="text-3xl font-bold">Everything you need to <span className="text-gradient-primary">stay secure</span></h2>
-          <p className="mt-3 text-muted-foreground">Comprehensive client-side security scanning with zero setup</p>
+          <h2 className="text-3xl font-bold">Tudo que você precisa para <span className="text-gradient-primary">ficar seguro</span></h2>
+          <p className="mt-3 text-muted-foreground">Varredura de segurança completa do lado do cliente, sem configuração</p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {[
-            { icon: Lock, title: "Exposed Secrets Detection", desc: "Finds AWS keys, API tokens, Firebase credentials, JWTs, and private keys leaked in your frontend code." },
-            { icon: Shield, title: "Security Headers Audit", desc: "Checks HSTS, CSP, X-Frame-Options, and other critical HTTP security headers." },
-            { icon: Cookie, title: "Authenticated Scanning", desc: "Scan protected pages via cookie injection — no credentials needed. Works with any auth system." },
-            { icon: Activity, title: "CORS Configuration", desc: "Detects wildcard origins, credential leaks, and origin reflection vulnerabilities." },
-            { icon: BarChart3, title: "Score Tracking", desc: "Monitor your security posture over time with score trends and historical comparisons." },
-            { icon: Zap, title: "Quick Wins", desc: "Actionable remediation steps ranked by impact. Fix the most critical issues in minutes." },
+            { icon: Lock, title: "Detecção de Segredos Expostos", desc: "Encontra chaves AWS, tokens de API, credenciais Firebase, JWTs e chaves privadas vazadas no código frontend." },
+            { icon: Shield, title: "Auditoria de Headers de Segurança", desc: "Verifica HSTS, CSP, X-Frame-Options e outros headers HTTP de segurança essenciais." },
+            { icon: Cookie, title: "Varredura Autenticada", desc: "Escaneie páginas protegidas via injeção de cookies — sem credenciais necessárias. Funciona com qualquer sistema de autenticação." },
+            { icon: Activity, title: "Configuração CORS", desc: "Detecta origens wildcard, vazamento de credenciais e vulnerabilidades de reflexão de origem." },
+            { icon: BarChart3, title: "Acompanhamento de Pontuação", desc: "Monitore sua postura de segurança ao longo do tempo com tendências de pontuação e comparações históricas." },
+            { icon: Zap, title: "Vitórias Rápidas", desc: "Passos de remediação acionáveis classificados por impacto. Corrija os problemas mais críticos em minutos." },
           ].map((f, i) => (
             <motion.div key={i} initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: i * 0.1 }}>
               <Card className="h-full border-border/50 bg-card/50 transition-colors hover:border-primary/30">
@@ -111,28 +111,28 @@ export default function Index() {
       <section className="border-t border-border/30 bg-card/30 py-20">
         <div className="container mx-auto px-4">
           <div className="text-center">
-            <h2 className="text-3xl font-bold">Simple, transparent <span className="text-gradient-primary">pricing</span></h2>
-            <p className="mt-3 text-muted-foreground">Start free. Scale when you're ready.</p>
+            <h2 className="text-3xl font-bold">Preços simples e <span className="text-gradient-primary">transparentes</span></h2>
+            <p className="mt-3 text-muted-foreground">Comece grátis. Escale quando estiver pronto.</p>
           </div>
           <div className="mt-12 grid gap-6 md:grid-cols-3 mx-auto max-w-4xl">
             {[
-              { name: "Free", price: "$0", scans: "50 scans/mo", urls: "3 URLs", sessions: "2 sessions", api: false, cta: "Get Started" },
-              { name: "Pro", price: "$19", scans: "500 scans/mo", urls: "10 URLs", sessions: "10 sessions", api: true, cta: "Upgrade to Pro", featured: true },
-              { name: "Team", price: "$49", scans: "2,000 scans/mo", urls: "Unlimited URLs", sessions: "Unlimited sessions", api: true, cta: "Go Team" },
+              { name: "Grátis", price: "R$0", scans: "50 varreduras/mês", urls: "3 URLs", sessions: "2 sessões", api: false, cta: "Comece Agora" },
+              { name: "Pro", price: "R$97", scans: "500 varreduras/mês", urls: "10 URLs", sessions: "10 sessões", api: true, cta: "Assinar Pro", featured: true },
+              { name: "Equipe", price: "R$247", scans: "2.000 varreduras/mês", urls: "URLs ilimitadas", sessions: "Sessões ilimitadas", api: true, cta: "Plano Equipe" },
             ].map((plan, i) => (
               <Card key={i} className={`relative ${plan.featured ? "border-primary/50 glow-primary" : "border-border/50"}`}>
                 {plan.featured && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Most Popular</Badge>
+                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Mais Popular</Badge>
                 )}
                 <CardHeader className="text-center">
                   <CardTitle className="text-xl">{plan.name}</CardTitle>
                   <div className="mt-2">
                     <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.price !== "$0" && <span className="text-muted-foreground">/mo</span>}
+                    {plan.price !== "R$0" && <span className="text-muted-foreground">/mês</span>}
                   </div>
                 </CardHeader>
                 <CardContent className="space-y-3">
-                  {[plan.scans, plan.urls, plan.sessions, plan.api ? "API access" : null, plan.api ? "Priority support" : "Community support"].filter(Boolean).map((f, j) => (
+                  {[plan.scans, plan.urls, plan.sessions, plan.api ? "Acesso à API" : null, plan.api ? "Suporte prioritário" : "Suporte da comunidade"].filter(Boolean).map((f, j) => (
                     <div key={j} className="flex items-center gap-2 text-sm">
                       <Check className="h-4 w-4 text-primary" /> {f}
                     </div>
@@ -154,7 +154,7 @@ export default function Index() {
             <Shield className="h-4 w-4 text-primary" />
             <span className="font-mono">SecureScan</span>
           </div>
-          <p>© {new Date().getFullYear()} SecureScan. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} SecureScan. Todos os direitos reservados.</p>
         </div>
       </footer>
     </div>
