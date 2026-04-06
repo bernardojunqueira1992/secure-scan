@@ -1,5 +1,4 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -10,26 +9,13 @@ import { ExternalLink, TrendingUp, TrendingDown, Minus } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
-import type { Tables } from "@/integrations/supabase/types";
-
-const statusLabels: Record<string, string> = {
-  pending: "pendente",
-  running: "executando",
-  completed: "concluído",
-  failed: "falhou",
-};
+import { STATUS_LABELS } from "@/domain/scan";
+import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
 
 export default function ScanHistory() {
   const { data: scans } = useQuery({
     queryKey: ["all_scans"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("scans")
-        .select("id, url, status, score, created_at, session_id, scan_sessions(name)")
-        .order("created_at", { ascending: false })
-        .limit(50);
-      return (data || []) as (Tables<"scans"> & { scan_sessions: { name: string } | null })[];
-    },
+    queryFn: () => supabaseScanRepository.listAll(50),
   });
 
   const completedScans = scans?.filter((s) => s.status === "completed" && s.score !== null) || [];
@@ -132,7 +118,7 @@ export default function ScanHistory() {
                         <TableCell className="text-xs text-muted-foreground">
                           {scan.scan_sessions?.name || "(público)"}
                         </TableCell>
-                        <TableCell className="font-mono text-xs">{statusLabels[scan.status] || scan.status}</TableCell>
+                        <TableCell className="font-mono text-xs">{STATUS_LABELS[scan.status] || scan.status}</TableCell>
                         <TableCell className="text-xs text-muted-foreground">
                           {format(new Date(scan.created_at), "PP", { locale: ptBR })}
                         </TableCell>

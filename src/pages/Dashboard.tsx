@@ -14,14 +14,9 @@ import { useToast } from "@/hooks/use-toast";
 import { Link } from "react-router-dom";
 import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import type { Tables } from "@/integrations/supabase/types";
-
-const statusLabels: Record<string, string> = {
-  pending: "pendente",
-  running: "executando",
-  completed: "concluído",
-  failed: "falhou",
-};
+import { buildScanInsert, STATUS_LABELS, statusIcon } from "@/domain/scan";
+import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
+import { supabaseSessionRepository } from "@/repositories/supabaseSessionRepository";
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -32,22 +27,12 @@ export default function Dashboard() {
 
   const { data: sessions } = useQuery({
     queryKey: ["scan_sessions"],
-    queryFn: async () => {
-      const { data } = await supabase.from("scan_sessions").select("id, name, url_pattern, expires_at").order("name");
-      return data || [];
-    },
+    queryFn: () => supabaseSessionRepository.listSummary(),
   });
 
   const { data: recentScans, refetch: refetchScans } = useQuery({
     queryKey: ["recent_scans"],
-    queryFn: async () => {
-      const { data } = await supabase
-        .from("scans")
-        .select("id, url, status, score, created_at, session_id, scan_sessions(name)")
-        .order("created_at", { ascending: false })
-        .limit(10);
-      return (data || []) as (Tables<"scans"> & { scan_sessions: { name: string } | null })[];
-    },
+    queryFn: () => supabaseScanRepository.listRecent(10),
   });
 
   useEffect(() => {
@@ -71,32 +56,23 @@ export default function Dashboard() {
 
     setScanning(true);
     try {
-      const scanData: any = { url, user_id: user.id };
-      if (sessionId && sessionId !== "none") scanData.session_id = sessionId;
+      const insertData = buildScanInsert({
+        url,
+        userId: user.id,
+        sessionId: sessionId !== "none" ? sessionId : null,
+      });
 
-      const { data: scan, error: scanError } = await supabase.from("scans").insert(scanData).select().single();
-      if (scanError) throw scanError;
-
-      const queueData: any = { scan_id: scan.id };
-      if (sessionId && sessionId !== "none") queueData.session_id = sessionId;
-
-      await supabase.from("scan_queue").insert(queueData);
+      await supabaseScanRepository.create(insertData);
 
       toast({ title: "Varredura enfileirada", description: `Escaneando ${url}...` });
       setUrl("");
       refetchScans();
-    } catch (err: any) {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      toast({ title: "Erro", description: message, variant: "destructive" });
     } finally {
       setScanning(false);
     }
-  };
-
-  const statusIcon = (status: string) => {
-    if (status === "completed") return "✓";
-    if (status === "failed") return "✗";
-    if (status === "running") return "⟳";
-    return "⏳";
   };
 
   return (
@@ -172,7 +148,7 @@ export default function Dashboard() {
                         {scan.scan_sessions?.name || "(público)"}
                       </TableCell>
                       <TableCell className="font-mono text-xs">
-                        {statusIcon(scan.status)} {statusLabels[scan.status] || scan.status}
+                        {statusIcon(scan.status)} {STATUS_LABELS[scan.status] || scan.status}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {formatDistanceToNow(new Date(scan.created_at), { addSuffix: true, locale: ptBR })}
