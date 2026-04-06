@@ -1,6 +1,5 @@
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import { AppLayout } from "@/components/AppLayout";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { ScoreBadge } from "@/components/ScoreBadge";
@@ -9,42 +8,27 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Download, Clock, Globe, Zap } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { groupFindingsBySeverity, pickQuickWins, SEVERITY_LABELS } from "@/domain/scan";
+import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
+import { supabaseFindingRepository } from "@/repositories/supabaseFindingRepository";
 
 export default function ScanReport() {
   const { id } = useParams<{ id: string }>();
 
   const { data: scan } = useQuery({
     queryKey: ["scan", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("scans").select("*").eq("id", id!).single();
-      return data;
-    },
+    queryFn: () => supabaseScanRepository.getById(id!),
+    enabled: !!id,
   });
 
   const { data: findings } = useQuery({
     queryKey: ["findings", id],
-    queryFn: async () => {
-      const { data } = await supabase.from("findings").select("*").eq("scan_id", id!).order("severity");
-      return data || [];
-    },
+    queryFn: () => supabaseFindingRepository.listByScan(id!),
+    enabled: !!id,
   });
 
-  const severityOrder = ["CRITICAL", "HIGH", "MEDIUM", "LOW"];
-  const severityLabels: Record<string, string> = {
-    CRITICAL: "crítico",
-    HIGH: "alto",
-    MEDIUM: "médio",
-    LOW: "baixo",
-  };
-  const groupedFindings = severityOrder.reduce((acc, sev) => {
-    const items = findings?.filter((f) => f.severity === sev) || [];
-    if (items.length) acc[sev] = items;
-    return acc;
-  }, {} as Record<string, typeof findings>);
-
-  const quickWins = findings
-    ?.filter((f) => f.severity === "MEDIUM" || f.severity === "LOW")
-    .slice(0, 3) || [];
+  const groupedFindings = findings ? groupFindingsBySeverity(findings) : {};
+  const quickWins = findings ? pickQuickWins(findings) : [];
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify({ scan, findings }, null, 2)], { type: "application/json" });
@@ -149,7 +133,7 @@ export default function ScanReport() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-lg">
                 <SeverityBadge severity={severity} />
-                <span>{items!.length} {items!.length === 1 ? "problema" : "problemas"} {severityLabels[severity] || severity.toLowerCase()}</span>
+                <span>{items!.length} {items!.length === 1 ? "problema" : "problemas"} {SEVERITY_LABELS[severity] || severity.toLowerCase()}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">

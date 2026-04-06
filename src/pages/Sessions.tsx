@@ -1,18 +1,19 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/useAuth";
-import { supabase } from "@/integrations/supabase/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { AppLayout } from "@/components/AppLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Cookie, Plus, Trash2, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { formatDistanceToNow, isPast } from "date-fns";
+import { formatDistanceToNow } from "date-fns";
 import { ptBR } from "date-fns/locale";
+import { getSessionStatus, buildSessionInsert } from "@/domain/session";
+import { supabaseSessionRepository } from "@/repositories/supabaseSessionRepository";
 
 export default function Sessions() {
   const { user } = useAuth();
@@ -25,23 +26,18 @@ export default function Sessions() {
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["scan_sessions"],
-    queryFn: async () => {
-      const { data } = await supabase.from("scan_sessions").select("*").order("created_at", { ascending: false });
-      return data || [];
-    },
+    queryFn: () => supabaseSessionRepository.list(),
   });
 
   const createSession = useMutation({
     mutationFn: async () => {
-      try { JSON.parse(cookies); } catch { throw new Error("JSON inválido. Por favor, cole um JSON de cookies válido."); }
-
-      const { error } = await supabase.from("scan_sessions").insert({
-        user_id: user!.id,
+      const data = buildSessionInsert({
+        userId: user!.id,
         name,
-        url_pattern: urlPattern,
-        cookies_encrypted: cookies,
+        urlPattern,
+        cookies,
       });
-      if (error) throw error;
+      await supabaseSessionRepository.create(data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scan_sessions"] });
@@ -51,29 +47,19 @@ export default function Sessions() {
       setUrlPattern("");
       setCookies("");
     },
-    onError: (err: any) => {
-      toast({ title: "Erro", description: err.message, variant: "destructive" });
+    onError: (err: unknown) => {
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      toast({ title: "Erro", description: message, variant: "destructive" });
     },
   });
 
   const deleteSession = useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase.from("scan_sessions").delete().eq("id", id);
-      if (error) throw error;
-    },
+    mutationFn: (id: string) => supabaseSessionRepository.remove(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["scan_sessions"] });
       toast({ title: "Sessão excluída" });
     },
   });
-
-  const getStatus = (expiresAt: string | null) => {
-    if (!expiresAt) return { label: "Sem expiração", color: "text-muted-foreground", dot: "bg-muted-foreground" };
-    if (isPast(new Date(expiresAt))) return { label: "Expirado", color: "text-destructive", dot: "bg-destructive" };
-    const diff = new Date(expiresAt).getTime() - Date.now();
-    if (diff < 86400000) return { label: "Expirando em breve", color: "text-warning", dot: "bg-warning" };
-    return { label: "Ativo", color: "text-primary", dot: "bg-primary" };
-  };
 
   return (
     <AppLayout>
@@ -148,7 +134,7 @@ export default function Sessions() {
         ) : (
           <div className="space-y-3">
             {sessions.map((session) => {
-              const status = getStatus(session.expires_at);
+              const status = getSessionStatus(session.expires_at);
               return (
                 <Card key={session.id} className="border-border/50 bg-card/50">
                   <CardContent className="flex items-center justify-between p-4">
