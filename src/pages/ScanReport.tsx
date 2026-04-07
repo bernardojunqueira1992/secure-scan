@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { AppLayout } from "@/components/AppLayout";
@@ -5,15 +6,33 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { ScoreBadge } from "@/components/ScoreBadge";
 import { SeverityBadge } from "@/components/SeverityBadge";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Download, Clock, Globe, Zap } from "lucide-react";
+import { ArrowLeft, Download, Clock, Globe, Zap, Copy, Check } from "lucide-react";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
-import { groupFindingsBySeverity, pickQuickWins, SEVERITY_LABELS } from "@/domain/scan";
+import {
+  groupFindingsBySeverity,
+  pickQuickWins,
+  SEVERITY_LABELS,
+  scoreToGrade,
+  gradeColor,
+  gradeBgColor,
+  countBySeverity,
+} from "@/domain/scan";
 import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
 import { supabaseFindingRepository } from "@/repositories/supabaseFindingRepository";
+import type { Json } from "@/integrations/supabase/types";
+
+function getAiPrompt(metadata: Json | null): string | null {
+  if (metadata && typeof metadata === "object" && !Array.isArray(metadata)) {
+    const prompt = (metadata as Record<string, Json | undefined>).ai_prompt;
+    if (typeof prompt === "string" && prompt.length > 0) return prompt;
+  }
+  return null;
+}
 
 export default function ScanReport() {
   const { id } = useParams<{ id: string }>();
+  const [copiedId, setCopiedId] = useState<string | null>(null);
 
   const { data: scan } = useQuery({
     queryKey: ["scan", id],
@@ -29,6 +48,15 @@ export default function ScanReport() {
 
   const groupedFindings = findings ? groupFindingsBySeverity(findings) : {};
   const quickWins = findings ? pickQuickWins(findings) : [];
+  const severityCounts = findings ? countBySeverity(findings) : { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+
+  const grade = scan?.score != null ? scoreToGrade(scan.score) : null;
+
+  const handleCopyPrompt = async (findingId: string, prompt: string) => {
+    await navigator.clipboard.writeText(prompt);
+    setCopiedId(findingId);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const exportJSON = () => {
     const blob = new Blob([JSON.stringify({ scan, findings }, null, 2)], { type: "application/json" });
@@ -89,7 +117,6 @@ export default function ScanReport() {
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <ScoreBadge score={scan.score} size="lg" />
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={exportJSON}>
                 <Download className="mr-1 h-3 w-3" /> JSON
@@ -101,6 +128,61 @@ export default function ScanReport() {
           </div>
         </div>
 
+        {/* Executive Summary */}
+        {scan.score != null && grade && (
+          <Card className="border-border/20 bg-card/30 backdrop-blur-xl">
+            <CardHeader>
+              <CardTitle className="text-lg">Resumo Executivo</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-col items-center gap-6 md:flex-row md:items-center">
+                {/* Grade circle */}
+                <div className={`flex h-24 w-24 shrink-0 items-center justify-center rounded-full border-2 ${gradeBgColor(grade)}`}>
+                  <span className={`font-mono text-3xl font-bold ${gradeColor(grade)}`}>{grade}</span>
+                </div>
+
+                {/* Score */}
+                <div className="text-center md:text-left">
+                  <p className="font-mono text-4xl font-bold text-foreground">{scan.score}<span className="text-lg text-muted-foreground">/100</span></p>
+                  <p className="mt-1 text-sm text-muted-foreground">Score de Segurança</p>
+                </div>
+
+                {/* Severity counters */}
+                <div className="flex flex-1 flex-wrap justify-center gap-3 md:justify-end">
+                  <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/50 px-4 py-2">
+                    <span className="text-sm">🔴</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Críticos</p>
+                      <p className="font-mono text-lg font-bold text-destructive">{severityCounts.CRITICAL}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/50 px-4 py-2">
+                    <span className="text-sm">🟠</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Altos</p>
+                      <p className="font-mono text-lg font-bold text-destructive">{severityCounts.HIGH}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/50 px-4 py-2">
+                    <span className="text-sm">🟡</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Médios</p>
+                      <p className="font-mono text-lg font-bold text-warning">{severityCounts.MEDIUM}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 rounded-lg border border-border/30 bg-card/50 px-4 py-2">
+                    <span className="text-sm">🟢</span>
+                    <div>
+                      <p className="text-xs text-muted-foreground">Baixos</p>
+                      <p className="font-mono text-lg font-bold text-primary">{severityCounts.LOW}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Quick Wins */}
         {quickWins.length > 0 && (
           <Card className="border-primary/20 bg-primary/5">
@@ -110,16 +192,13 @@ export default function ScanReport() {
               </CardTitle>
               <CardDescription>Problemas mais fáceis de corrigir com maior impacto</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3">
+            <CardContent className="space-y-2">
               {quickWins.map((f, i) => (
-                <div key={f.id} className="flex items-start gap-3 rounded-md border border-border/30 bg-card/50 p-3">
+                <div key={f.id} className="flex items-center gap-3 rounded-md border border-border/30 bg-card/50 px-3 py-2">
                   <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
                     {i + 1}
                   </span>
-                  <div>
-                    <p className="text-sm font-medium">{f.title}</p>
-                    {f.remediation && <p className="mt-1 text-xs text-muted-foreground">{f.remediation}</p>}
-                  </div>
+                  <p className="flex-1 text-sm font-medium">{f.title}</p>
                   <SeverityBadge severity={f.severity} />
                 </div>
               ))}
@@ -137,24 +216,59 @@ export default function ScanReport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              {items!.map((f) => (
-                <div key={f.id} className="rounded-md border border-border/30 p-4">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1">
-                      <h4 className="font-medium">{f.title}</h4>
-                      {f.description && <p className="mt-1 text-sm text-muted-foreground">{f.description}</p>}
-                      {f.location && (
-                        <p className="mt-2 font-mono text-xs text-muted-foreground">📍 {f.location}</p>
-                      )}
-                      {f.remediation && (
-                        <div className="mt-2 rounded bg-primary/5 px-3 py-2 text-sm text-primary">
-                          💡 {f.remediation}
-                        </div>
-                      )}
+              {items!.map((f) => {
+                const aiPrompt = getAiPrompt(f.metadata);
+                return (
+                  <div key={f.id} className="rounded-md border border-border/30 p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h4 className="font-medium">{f.title}</h4>
+                        {f.description && <p className="mt-1 text-sm text-muted-foreground">{f.description}</p>}
+                        {f.location && (
+                          <p className="mt-2 font-mono text-xs text-muted-foreground">📍 {f.location}</p>
+                        )}
+                        {f.remediation && (
+                          <div className="mt-2 flex items-start gap-2">
+                            <div className="flex-1 rounded bg-primary/5 px-3 py-2 text-sm text-primary">
+                              💡 {f.remediation}
+                            </div>
+                            {aiPrompt && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="shrink-0 text-xs text-muted-foreground hover:text-primary"
+                                onClick={() => handleCopyPrompt(f.id, aiPrompt)}
+                              >
+                                {copiedId === f.id ? (
+                                  <><Check className="mr-1 h-3 w-3" /> Copiado!</>
+                                ) : (
+                                  <><Copy className="mr-1 h-3 w-3" /> 🤖 Copiar Prompt</>
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                        )}
+                        {!f.remediation && aiPrompt && (
+                          <div className="mt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-xs text-muted-foreground hover:text-primary"
+                              onClick={() => handleCopyPrompt(f.id, aiPrompt)}
+                            >
+                              {copiedId === f.id ? (
+                                <><Check className="mr-1 h-3 w-3" /> Copiado!</>
+                              ) : (
+                                <><Copy className="mr-1 h-3 w-3" /> 🤖 Copiar Prompt</>
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </CardContent>
           </Card>
         ))}
