@@ -1,71 +1,71 @@
 
 
-# Scan Process Visualization — Descobertas → Testes → Resultado
+# Correções na Migration do Worker
 
-## Contexto
+O SQL do worker tem **3 erros** que precisam ser corrigidos antes de aplicar:
 
-O relatório atual pula direto para os resultados. O usuário quer mostrar as 3 fases do scan: o que foi **descoberto**, o que foi **testado**, e depois os **resultados** (que já existem). Os dados dessas fases não existem hoje — o worker precisa enviá-los.
+## Problemas encontrados
 
-## Abordagem
+| # | Problema | Worker escreveu | Correto (banco atual) |
+|---|----------|----------------|----------------------|
+| 1 | Nome da tabela de jobs | `scan_jobs` | `scan_queue` |
+| 2 | Coluna duração | `duration_ms` | `scan_duration_ms` |
+| 3 | Falta `ON CONFLICT` nos findings | Sem tratamento | `ON CONFLICT (scan_id, content_hash) DO NOTHING` |
+| 4 | Falta `search_path` | Não definido | `SET search_path TO 'public'` |
+| 5 | Falta `LEAST/GREATEST` no score | `score = p_score` | `score = LEAST(100, GREATEST(0, p_score))` |
+| 6 | Falta `NULLIF` no page_title | `page_title = p_page_title` | `page_title = NULLIF(p_page_title, '')` |
+| 7 | Falta `COALESCE` no metadata dos findings | `(f->'metadata')::jsonb` | `COALESCE((f->'metadata')::jsonb, '{}')` |
 
-### 1. Adicionar coluna `metadata` na tabela `scans`
+## O que fazer
 
-A tabela `scans` não tem campo metadata. Adicionar `metadata jsonb DEFAULT '{}'` para o worker enviar os dados do processo.
+**Mande este SQL corrigido para o worker** — não precisa mudar nada no Lovable, só a migration que o worker aplica:
 
-Estrutura esperada do worker:
+```sql
+CREATE OR REPLACE FUNCTION public.complete_scan_job(
+  p_job_id uuid,
+  p_scan_id uuid,
+  p_score integer,
+  p_duration_ms integer,
+  p_page_title text DEFAULT ''::text,
+  p_findings jsonb DEFAULT '[]'::jsonb,
+  p_metadata jsonb DEFAULT '{}'::jsonb
+)
+RETURNS void
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+BEGIN
+  UPDATE public.scan_queue
+  SET status = 'completed', completed_at = NOW()
+  WHERE id = p_job_id;
 
-```json
-{
-  "discovery": {
-    "routes": ["/ ", "/login", "/api/v1/users", ...],
-    "tables": ["users", "plans", "scans", ...],
-    "keys": [{"type": "anon_key", "source": "js_bundle"}],
-    "edge_functions": ["scan-worker", "auth-callback"],
-    "migrations": 12
-  },
-  "tests": {
-    "routes_without_auth": ["/api/v1/users", "/api/health"],
-    "exposed_tables": ["plans", "findings"],
-    "exposed_edge_functions": [],
-    "exposed_apis": ["/rest/v1/plans"]
-  }
-}
+  UPDATE public.scans
+  SET status = 'completed',
+      score = LEAST(100, GREATEST(0, p_score)),
+      scan_duration_ms = p_duration_ms,
+      page_title = NULLIF(p_page_title, ''),
+      completed_at = NOW(),
+      metadata = p_metadata
+  WHERE id = p_scan_id;
+
+  INSERT INTO public.findings (scan_id, type, severity, title, description, location, remediation, metadata)
+  SELECT
+    p_scan_id,
+    (f->>'type'),
+    (f->>'severity'),
+    (f->>'title'),
+    (f->>'description'),
+    (f->>'location'),
+    (f->>'remediation'),
+    COALESCE((f->'metadata')::jsonb, '{}')
+  FROM jsonb_array_elements(p_findings) AS f
+  ON CONFLICT (scan_id, content_hash) DO NOTHING;
+END;
+$$;
 ```
 
-### 2. Nova seção "Processo do Scan" no relatório (entre Header e Resumo Executivo)
+A migration deve ser aplicada **aqui no Lovable** (não no worker), pois é onde o banco vive. Após aprovação, aplico via migration tool.
 
-Três cards com Tabs ou accordion, usando o design cyber/glassmorphism do projeto:
-
-**Card 1 — 🔍 Descobertas**
-- Rotas descobertas (lista com contagem)
-- Tabelas encontradas
-- Chaves expostas (anon key, etc.)
-- Edge Functions
-- Migrations
-
-**Card 2 — 🧪 Testes Realizados**
-- Rotas sem auth (com ícone ⚠️ para as que falharam)
-- Tabelas expostas
-- Edge Functions expostas
-- APIs e Webhooks expostos
-
-**Card 3 — 📊 Resultado** → scroll suave para o Resumo Executivo existente
-
-Layout: 3 colunas em desktop, stack em mobile. Cada card mostra contagem no header e lista expandível dos itens.
-
-### 3. Arquivos a modificar
-
-| Arquivo | Mudança |
-|---------|---------|
-| Migration SQL | `ALTER TABLE scans ADD COLUMN metadata jsonb DEFAULT '{}'` |
-| `src/pages/ScanReport.tsx` | Nova seção `ScanProcess` com 3 cards, lê `scan.metadata` |
-| `src/components/ScanProcessSection.tsx` | Novo componente para as 3 fases |
-
-### 4. Prompt para o Worker
-
-Após implementar, vou gerar o prompt exato para você ajustar o worker para popular `scans.metadata` com a estrutura `discovery` + `tests` no momento do `UPDATE` do scan.
-
-### Sem breaking changes
-- O campo `metadata` é nullable/default `{}`, então scans antigos continuam funcionando
-- A seção só aparece se `scan.metadata?.discovery` existir
+O worker só precisa **chamar** a função com o novo parâmetro `p_metadata`.
 
