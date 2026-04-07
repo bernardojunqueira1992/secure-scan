@@ -1,39 +1,71 @@
 
 
-# Atualizar Relatório de Varredura — Resumo Executivo + Prompt IA + Quick Wins
+# Scan Process Visualization — Descobertas → Testes → Resultado
 
-## Mudanças
+## Contexto
 
-### 1. Domain layer (`src/domain/scan.ts`)
-- Add `scoreToGrade(score: number): string` — maps score to letter grade (A+, A, A-, B+, ... F)
-- Add `gradeColor(grade: string): string` — returns tailwind color class based on grade letter
-- Add `countBySeverity(findings)` — returns `{ CRITICAL: n, HIGH: n, MEDIUM: n, LOW: n }`
-- Update `pickQuickWins` to sort by severity ascending (LOW first, then MEDIUM) and limit to 3
+O relatório atual pula direto para os resultados. O usuário quer mostrar as 3 fases do scan: o que foi **descoberto**, o que foi **testado**, e depois os **resultados** (que já existem). Os dados dessas fases não existem hoje — o worker precisa enviá-los.
 
-### 2. ScanReport page (`src/pages/ScanReport.tsx`)
+## Abordagem
 
-**Resumo Executivo section** (after header, before Quick Wins):
-- Glassmorphism card (`backdrop-blur-xl bg-card/30 border-border/20`)
-- Left: large circle with letter grade, dynamic color (green A/B, yellow C, red D/F)
-- Center: numeric score "X/100"
-- Right: 4 small severity counter cards in a row with colored dots (🔴 Críticos, 🟠 Altos, 🟡 Médios, 🟢 Baixos)
+### 1. Adicionar coluna `metadata` na tabela `scans`
 
-**Quick Wins** — simplified:
-- Remove remediation text from quick win items
-- Keep only: number badge + title + severity badge
-- Sort by LOW first (ascending severity)
+A tabela `scans` não tem campo metadata. Adicionar `metadata jsonb DEFAULT '{}'` para o worker enviar os dados do processo.
 
-**AI Prompt button** on each finding card:
-- Check `f.metadata` for `ai_prompt` field (metadata is `Json | null`, cast safely)
-- When present: show a small ghost button "🤖 Copiar Prompt" next to the remediation box
-- On click: `navigator.clipboard.writeText(prompt)`, show "Copiado!" for 2s via local state
-- Use `useState` with a `copiedId` pattern to track which finding was just copied
+Estrutura esperada do worker:
 
-### 3. Files to modify
-| File | Change |
-|------|--------|
-| `src/domain/scan.ts` | Add `scoreToGrade`, `gradeColor`, `countBySeverity`; update `pickQuickWins` sort |
-| `src/pages/ScanReport.tsx` | Add Executive Summary section, AI prompt button, simplify Quick Wins |
+```json
+{
+  "discovery": {
+    "routes": ["/ ", "/login", "/api/v1/users", ...],
+    "tables": ["users", "plans", "scans", ...],
+    "keys": [{"type": "anon_key", "source": "js_bundle"}],
+    "edge_functions": ["scan-worker", "auth-callback"],
+    "migrations": 12
+  },
+  "tests": {
+    "routes_without_auth": ["/api/v1/users", "/api/health"],
+    "exposed_tables": ["plans", "findings"],
+    "exposed_edge_functions": [],
+    "exposed_apis": ["/rest/v1/plans"]
+  }
+}
+```
 
-No database or migration changes needed — all data already exists in `findings.metadata` and `scans.score`.
+### 2. Nova seção "Processo do Scan" no relatório (entre Header e Resumo Executivo)
+
+Três cards com Tabs ou accordion, usando o design cyber/glassmorphism do projeto:
+
+**Card 1 — 🔍 Descobertas**
+- Rotas descobertas (lista com contagem)
+- Tabelas encontradas
+- Chaves expostas (anon key, etc.)
+- Edge Functions
+- Migrations
+
+**Card 2 — 🧪 Testes Realizados**
+- Rotas sem auth (com ícone ⚠️ para as que falharam)
+- Tabelas expostas
+- Edge Functions expostas
+- APIs e Webhooks expostos
+
+**Card 3 — 📊 Resultado** → scroll suave para o Resumo Executivo existente
+
+Layout: 3 colunas em desktop, stack em mobile. Cada card mostra contagem no header e lista expandível dos itens.
+
+### 3. Arquivos a modificar
+
+| Arquivo | Mudança |
+|---------|---------|
+| Migration SQL | `ALTER TABLE scans ADD COLUMN metadata jsonb DEFAULT '{}'` |
+| `src/pages/ScanReport.tsx` | Nova seção `ScanProcess` com 3 cards, lê `scan.metadata` |
+| `src/components/ScanProcessSection.tsx` | Novo componente para as 3 fases |
+
+### 4. Prompt para o Worker
+
+Após implementar, vou gerar o prompt exato para você ajustar o worker para popular `scans.metadata` com a estrutura `discovery` + `tests` no momento do `UPDATE` do scan.
+
+### Sem breaking changes
+- O campo `metadata` é nullable/default `{}`, então scans antigos continuam funcionando
+- A seção só aparece se `scan.metadata?.discovery` existir
 
