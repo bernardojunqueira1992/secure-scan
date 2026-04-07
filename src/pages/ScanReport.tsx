@@ -19,6 +19,7 @@ import {
   countBySeverity,
 } from "@/domain/scan";
 import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
+import { ScanProcessSection } from "@/components/ScanProcessSection";
 import { supabaseFindingRepository } from "@/repositories/supabaseFindingRepository";
 import type { Json } from "@/integrations/supabase/types";
 
@@ -128,7 +129,11 @@ export default function ScanReport() {
           </div>
         </div>
 
+        {/* Scan Process */}
+        <ScanProcessSection metadata={scan.metadata} />
+
         {/* Executive Summary */}
+        <div id="executive-summary" />
         {scan.score != null && grade && (
           <Card className="border-border/20 bg-card/30 backdrop-blur-xl">
             <CardHeader>
