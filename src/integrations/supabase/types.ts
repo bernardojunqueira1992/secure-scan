@@ -401,6 +401,18 @@ export type Database = {
             }
             Returns: undefined
           }
+        | {
+            Args: {
+              p_duration_ms: number
+              p_findings?: Json
+              p_job_id: string
+              p_metadata?: Json
+              p_page_title?: string
+              p_scan_id: string
+              p_score: number
+            }
+            Returns: undefined
+          }
       dequeue_scan_job: {
         Args: never
         Returns: {
