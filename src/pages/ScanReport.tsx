@@ -19,6 +19,7 @@ import {
   countBySeverity,
 } from "@/domain/scan";
 import { supabaseScanRepository } from "@/repositories/supabaseScanRepository";
+import { ScanProcessSection } from "@/components/ScanProcessSection";
 import { supabaseFindingRepository } from "@/repositories/supabaseFindingRepository";
 import type { Json } from "@/integrations/supabase/types";
 
