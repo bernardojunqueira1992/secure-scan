@@ -1,37 +1,36 @@
 
 
-# Deploy Scanner Gateway Edge Function
+# Restringir Todas as Tabelas para Apenas Usuários Autenticados
 
-## What this does
-Creates a secure proxy (Edge Function) so the Railway worker can communicate with the database without needing the service role key directly. The worker authenticates with a shared secret (`x-worker-key`), and the Edge Function uses the service role key internally.
+## Problema
+Todas as 8 políticas RLS usam o role `{public}`, que inclui tanto `anon` quanto `authenticated`. Isso significa que a anon key pode ler dados (mesmo que `auth.uid()` retorne NULL para anon, bloqueando na prática a maioria das queries — exceto `plans` que tem `USING (true)`).
 
-## Steps
+## O que vai mudar
 
-### 1. Add WORKER_API_KEY secret
-Use the `add_secret` tool to ask you to input the shared secret the worker will use to authenticate with the gateway.
+Recriar todas as políticas existentes trocando o role de `public` para `authenticated`:
 
-### 2. Create Edge Function `scanner-gateway`
-**File:** `supabase/functions/scanner-gateway/index.ts`
+| Tabela | Política | Mudança |
+|---|---|---|
+| `findings` | Users view findings of own scans | `public` → `authenticated` |
+| `plans` | Plans are readable by everyone | `public` → `authenticated` |
+| `scan_queue` | Users view own queue jobs | `public` → `authenticated` |
+| `scan_sessions` | Users manage own sessions | `public` → `authenticated` |
+| `scans` | Users insert own scans | `public` → `authenticated` |
+| `scans` | Users update own scans | `public` → `authenticated` |
+| `scans` | Users view own scans | `public` → `authenticated` |
+| `scheduled_scans` | Users manage own scheduled scans | `public` → `authenticated` |
+| `subscriptions` | Users view own subscription | `public` → `authenticated` |
+| `scanner_heartbeats` | (nenhuma) | Adicionar SELECT para `authenticated` |
 
-A Deno HTTP handler that:
-- Validates `x-worker-key` header against the `WORKER_API_KEY` secret
-- Routes actions (`dequeue`, `complete`, `fail`, `heartbeat`, `get_session_cookies`) to the corresponding Supabase RPC calls using `SUPABASE_SERVICE_ROLE_KEY` (auto-available)
-- Includes CORS headers
-- Returns JSON responses
+## Implementação
 
-Supported actions matching `IJobRepository`:
-| Action | RPC Called |
-|---|---|
-| `dequeue` | `dequeue_scan_job()` |
-| `complete` | `complete_scan_job(...)` |
-| `fail` | `fail_scan_job(...)` |
-| `heartbeat` | `scanner_heartbeat(...)` |
-| `get_session_cookies` | `get_session_cookies(...)` |
+Uma única migration SQL que:
+1. Dropa cada política existente
+2. Recria com `TO authenticated` ao invés de `TO public`
+3. Adiciona política SELECT para `scanner_heartbeats` restrita a `authenticated`
 
-### 3. Deploy and test
-Deploy the function automatically, then test with `curl_edge_functions` to verify:
-- Returns 401 without the key
-- Returns data with the correct key
-
-No database changes needed — all RPCs already exist.
+## Impacto
+- Nenhuma mudança no frontend (usuários já precisam estar logados via `ProtectedRoute`)
+- A Edge Function `scanner-gateway` não é afetada (usa `SERVICE_ROLE_KEY` que bypassa RLS)
+- A tabela `plans` deixará de ser legível sem login — se houver uma página de pricing pública, precisará de ajuste
 
