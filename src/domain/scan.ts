@@ -28,7 +28,7 @@ export function buildScanInsert(params: CreateScanParams): ScanInsertData {
 }
 
 /** Severity ordering for report grouping */
-export const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW"] as const;
+export const SEVERITY_ORDER = ["CRITICAL", "HIGH", "MEDIUM", "LOW", "INFO"] as const;
 export type Severity = (typeof SEVERITY_ORDER)[number];
 
 export const SEVERITY_LABELS: Record<string, string> = {
@@ -36,6 +36,7 @@ export const SEVERITY_LABELS: Record<string, string> = {
   HIGH: "alto",
   MEDIUM: "médio",
   LOW: "baixo",
+  INFO: "informativo",
 };
 
 export const STATUS_LABELS: Record<string, string> = {
@@ -125,7 +126,7 @@ export function gradeBgColor(grade: string): string {
 export function countBySeverity<T extends { severity: string }>(
   findings: T[]
 ): Record<string, number> {
-  const counts: Record<string, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0 };
+  const counts: Record<string, number> = { CRITICAL: 0, HIGH: 0, MEDIUM: 0, LOW: 0, INFO: 0 };
   for (const f of findings) {
     counts[f.severity] = (counts[f.severity] ?? 0) + 1;
   }
