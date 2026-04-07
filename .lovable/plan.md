@@ -1,20 +1,37 @@
 
 
-# Fix findings severity constraint
+# Deploy Scanner Gateway Edge Function
 
-The `findings` table has a CHECK constraint that doesn't include `'INFO'` as a valid severity. The worker is trying to insert findings with severity `'INFO'` and failing.
+## What this does
+Creates a secure proxy (Edge Function) so the Railway worker can communicate with the database without needing the service role key directly. The worker authenticates with a shared secret (`x-worker-key`), and the Edge Function uses the service role key internally.
 
-## Migration
+## Steps
 
-Drop the old constraint and re-create it with `'INFO'` included:
+### 1. Add WORKER_API_KEY secret
+Use the `add_secret` tool to ask you to input the shared secret the worker will use to authenticate with the gateway.
 
-```sql
-ALTER TABLE findings DROP CONSTRAINT findings_severity_check;
-ALTER TABLE findings ADD CONSTRAINT findings_severity_check 
-  CHECK (severity IN ('INFO', 'LOW', 'MEDIUM', 'HIGH', 'CRITICAL'));
-```
+### 2. Create Edge Function `scanner-gateway`
+**File:** `supabase/functions/scanner-gateway/index.ts`
 
-## Code update
+A Deno HTTP handler that:
+- Validates `x-worker-key` header against the `WORKER_API_KEY` secret
+- Routes actions (`dequeue`, `complete`, `fail`, `heartbeat`, `get_session_cookies`) to the corresponding Supabase RPC calls using `SUPABASE_SERVICE_ROLE_KEY` (auto-available)
+- Includes CORS headers
+- Returns JSON responses
 
-Add `'INFO'` to the `SEVERITY_ORDER` array in `src/domain/scan.ts` so the UI can display INFO-level findings correctly.
+Supported actions matching `IJobRepository`:
+| Action | RPC Called |
+|---|---|
+| `dequeue` | `dequeue_scan_job()` |
+| `complete` | `complete_scan_job(...)` |
+| `fail` | `fail_scan_job(...)` |
+| `heartbeat` | `scanner_heartbeat(...)` |
+| `get_session_cookies` | `get_session_cookies(...)` |
+
+### 3. Deploy and test
+Deploy the function automatically, then test with `curl_edge_functions` to verify:
+- Returns 401 without the key
+- Returns data with the correct key
+
+No database changes needed — all RPCs already exist.
 
