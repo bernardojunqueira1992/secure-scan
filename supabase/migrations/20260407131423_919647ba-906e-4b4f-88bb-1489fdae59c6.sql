@@ -1,0 +1,1 @@
+ALTER TABLE public.scans ADD COLUMN metadata jsonb DEFAULT '{}'::jsonb;

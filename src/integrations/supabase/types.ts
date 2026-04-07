@@ -223,6 +223,7 @@ export type Database = {
           created_at: string
           error_message: string | null
           id: string
+          metadata: Json | null
           page_title: string | null
           scan_duration_ms: number | null
           score: number | null
@@ -237,6 +238,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          metadata?: Json | null
           page_title?: string | null
           scan_duration_ms?: number | null
           score?: number | null
@@ -251,6 +253,7 @@ export type Database = {
           created_at?: string
           error_message?: string | null
           id?: string
+          metadata?: Json | null
           page_title?: string | null
           scan_duration_ms?: number | null
           score?: number | null
