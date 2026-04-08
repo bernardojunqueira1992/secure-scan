@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Shield, Lock, Activity, Cookie, Zap, BarChart3, Check, ArrowRight } from "lucide-react";
+import { Shield, Lock, Activity, Cookie, Zap, BarChart3, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { motion } from "framer-motion";
 
@@ -104,46 +104,6 @@ export default function Index() {
               </Card>
             </motion.div>
           ))}
-        </div>
-      </section>
-
-      {/* Pricing */}
-      <section className="border-t border-border/30 bg-card/30 py-20">
-        <div className="container mx-auto px-4">
-          <div className="text-center">
-            <h2 className="text-3xl font-bold">Preços simples e <span className="text-gradient-primary">transparentes</span></h2>
-            <p className="mt-3 text-muted-foreground">Comece grátis. Escale quando estiver pronto.</p>
-          </div>
-          <div className="mt-12 grid gap-6 md:grid-cols-3 mx-auto max-w-4xl">
-            {[
-              { name: "Grátis", price: "R$0", scans: "50 varreduras/mês", urls: "3 URLs", sessions: "2 sessões", api: false, cta: "Comece Agora" },
-              { name: "Pro", price: "R$97", scans: "500 varreduras/mês", urls: "10 URLs", sessions: "10 sessões", api: true, cta: "Assinar Pro", featured: true },
-              { name: "Equipe", price: "R$247", scans: "2.000 varreduras/mês", urls: "URLs ilimitadas", sessions: "Sessões ilimitadas", api: true, cta: "Plano Equipe" },
-            ].map((plan, i) => (
-              <Card key={i} className={`relative ${plan.featured ? "border-primary/50 glow-primary" : "border-border/50"}`}>
-                {plan.featured && (
-                  <Badge className="absolute -top-3 left-1/2 -translate-x-1/2">Mais Popular</Badge>
-                )}
-                <CardHeader className="text-center">
-                  <CardTitle className="text-xl">{plan.name}</CardTitle>
-                  <div className="mt-2">
-                    <span className="text-4xl font-bold">{plan.price}</span>
-                    {plan.price !== "R$0" && <span className="text-muted-foreground">/mês</span>}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  {[plan.scans, plan.urls, plan.sessions, plan.api ? "Acesso à API" : null, plan.api ? "Suporte prioritário" : "Suporte da comunidade"].filter(Boolean).map((f, j) => (
-                    <div key={j} className="flex items-center gap-2 text-sm">
-                      <Check className="h-4 w-4 text-primary" /> {f}
-                    </div>
-                  ))}
-                  <Button className="mt-4 w-full" variant={plan.featured ? "default" : "outline"} asChild>
-                    <Link to="/auth">{plan.cta}</Link>
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
         </div>
       </section>
 
