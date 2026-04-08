@@ -1,38 +1,22 @@
 
 
-# Fix RLS: Restrict All Tables to Authenticated Users Only
+# Remove Pricing Plans from Landing Page
 
-## Current State
-All 9 policies use `{public}` role (includes `anon`). RLS is enabled on all tables but the role allows anonymous access. Several tables also lack DELETE protection.
+## Summary
+Remove the pricing section from the landing page and clean up unused imports since the project will be offered as a free remixable template on Lovable.
 
-## Important: Table-Specific Constraints
-- **`plans`** has NO `user_id` column — it's a reference/pricing table. Cannot use `auth.uid() = user_id`. Will restrict to authenticated read-only.
-- **`findings`** has NO `user_id` — access is via `scan_id` join to `scans`. Will keep existing join-based check but restrict to authenticated.
-- **`scanner_heartbeats`** has no policies at all — will add authenticated read-only.
+## What Changes
 
-## Migration: Single SQL Script
+### 1. `src/pages/Index.tsx`
+- **Delete** the entire Pricing section (lines 110–147) — the `<section>` block with plans grid
+- **Remove unused imports**: `Check` from lucide-react (only used in pricing cards)
+- Keep the `BarChart3` import (used in features section)
 
-### Drop all existing policies, recreate with `TO authenticated`:
+### 2. Database tables (`plans`, `subscriptions`, `check_scan_quota`)
+- **No changes for now** — removing DB tables/functions requires careful handling of the `check_scan_quota` function used in the `scans` INSERT RLS policy. Removing it would break scan creation. These can be cleaned up in a future step if desired.
 
-| Table | Policy | Operation | Expression |
-|---|---|---|---|
-| `findings` | View own findings | SELECT | `EXISTS (SELECT 1 FROM scans WHERE scans.id = findings.scan_id AND scans.user_id = auth.uid())` |
-| `plans` | Read plans | SELECT | `true` (reference data, auth-gated) |
-| `scan_queue` | View own jobs | SELECT | `EXISTS (SELECT 1 FROM scans WHERE scans.id = scan_queue.scan_id AND scans.user_id = auth.uid())` |
-| `scan_sessions` | Manage own | ALL | `auth.uid() = user_id` |
-| `scans` | View own | SELECT | `auth.uid() = user_id` |
-| `scans` | Insert own | INSERT | `auth.uid() = user_id AND check_scan_quota(auth.uid())` |
-| `scans` | Update own | UPDATE | `auth.uid() = user_id` |
-| `scheduled_scans` | Manage own | ALL | `auth.uid() = user_id` |
-| `subscriptions` | View own | SELECT | `auth.uid() = user_id` |
-| `scanner_heartbeats` | View (new) | SELECT | `true` (operational, auth-gated) |
-
-### What about DELETE?
-- Tables with `ALL` policies (`scan_sessions`, `scheduled_scans`) already cover DELETE.
-- `scans`, `findings`, `scan_queue`, `plans`, `subscriptions` — no DELETE policy means Postgres **blocks DELETE** when RLS is enabled. This is correct behavior. No change needed.
-
-### What does NOT change
-- No frontend code changes needed (users already go through `ProtectedRoute`)
-- Edge Function unaffected (uses `SERVICE_ROLE_KEY` which bypasses RLS)
-- Policy logic stays the same — only the role changes from `public` → `authenticated`
+## What Does NOT Change
+- Features section, Hero, Footer, Nav — all stay
+- Database tables remain (no breaking changes to RLS or scan flow)
+- No other pages reference pricing
 
