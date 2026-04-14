@@ -8,12 +8,7 @@
  *   SCANNER_ID             – (optional) worker identity, default "railway-worker"
  */
 
-// Debug: log all env vars present at startup (masks values)
-console.log("[worker] env vars present:", Object.keys(process.env).sort().join(", "));
-console.log("[worker] SCANNER_GATEWAY_URL =", process.env.SCANNER_GATEWAY_URL ?? "(not set)");
-console.log("[worker] WORKER_API_KEY =", process.env.WORKER_API_KEY ? "(set, length=" + process.env.WORKER_API_KEY.length + ")" : "(not set)");
-
-const GATEWAY_URL = (process.env.SCANNER_GATEWAY_URL ?? "").trim();
+const GATEWAY_URL = (process.env.SCANNER_GATEWAY_URL ?? process.env.GATEWAY_URL ?? "").trim();
 const WORKER_KEY = (process.env.WORKER_API_KEY ?? "").trim();
 const POLL_INTERVAL = parseInt(process.env.POLL_INTERVAL_MS ?? "5000", 10);
 const SCANNER_ID = process.env.SCANNER_ID ?? "railway-worker";
