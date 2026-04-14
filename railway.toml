@@ -1,8 +1,6 @@
 [build]
-builder = "nixpacks"
+builder = "dockerfile"
 
 [deploy]
-startCommand = "node worker.js"
-healthcheckPath = ""
 restartPolicyType = "on_failure"
 restartPolicyMaxRetries = 5
